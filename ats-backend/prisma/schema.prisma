@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// run npx prisma studio to see all data
+// run npm run clear-db to clear the database
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role
+  createdAt DateTime @default(now())
+
+  // Relations
+  resume    Resume?           // Only for JOB_SEEKER
+  jobs      Job[]             // Only for RECRUITER
+}
+
+model Resume {
+  id         Int           @id @default(autoincrement())
+  filename   String
+  path       String
+  mimetype   String
+  size       Int
+  uploadedAt DateTime      @default(now())
+  jobRole    String?
+  atsScore   Float?
+  userId     String        @unique
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  jobResumes JobResume[]   // 👈 reverse relation added here ✅
+}
+
+model Job {
+  id          String        @id @default(uuid())
+  jobRole     String
+  description String
+  skills      String
+  experience  String
+  cgpa        String
+  jobType     String
+  companyName String
+  createdAt   DateTime      @default(now())
+  recruiterId String
+  recruiter   User          @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+
+  jobResumes  JobResume[]   // 👈 each job can have many submitted resumes
+}
+
+model JobResume {
+  id        Int      @id @default(autoincrement())
+  jobId     String
+  resumeId  Int
+
+  job       Job      @relation(fields: [jobId], references: [id])
+  resume    Resume   @relation(fields: [resumeId], references: [id])
+
+  atsScore  Float? //update it each time a resume is linked to a job
+  @@unique([jobId, resumeId])
+}
+
+
+enum Role {
+  RECRUITER
+  JOB_SEEKER
+}
+
+
