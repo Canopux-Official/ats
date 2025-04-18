@@ -1,12 +1,24 @@
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { useEffect, useState } from "react";
+import { FaUserCircle } from "react-icons/fa"
 
 const Navbar = () => {
   const [role, setRole] = useState(null);
+  const [name, setName] = useState(null);  // State to store user's email
 
   useEffect(() => {
     const stored = localStorage.getItem("token");
+    const storedEmail = localStorage.getItem("email"); // Get email from localStorage
+    let cleanEmail = ""
+    if(storedEmail){
+      cleanEmail = storedEmail.replace(/^"|"$/g, '');
+    }
+
+    if (cleanEmail) {
+      const emailPrefix = cleanEmail.split('@')[0];
+      setName(emailPrefix); // Set name as the stored email
+    }
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -40,7 +52,7 @@ const Navbar = () => {
   return (
     <nav id="home" className="bg-white shadow-md w-full fixed top-0 z-50 h-[60px] flex items-center">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex justify-between items-center">
-        {/* Company Name */}
+        {/* Logo */}
         <div className="text-2xl font-bold text-blue-600">AI Resume Screening</div>
 
         {/* Desktop Menu */}
@@ -56,21 +68,39 @@ const Navbar = () => {
           </Link>
           <Link to="/pricing" className="text-gray-700 hover:text-blue-600">Pricing</Link>
           <Link to="/contact" className="text-gray-700 hover:text-blue-600">Contact</Link>
+
+          {/* Conditional Buttons based on role */}
+          {role === "JOB_SEEKER" && (
+            <Link to="/job" className="text-sm font-medium text-green-600 hover:underline">
+              Upload Resume
+            </Link>
+          )}
+          {role === "RECRUITER" && (
+            <Link to="/jobr" className="text-sm font-medium text-indigo-600 hover:underline">
+              Post a Job
+            </Link>
+          )}
         </div>
 
-        {/* Auth Button */}
-        <div>
+        {/* Auth or Profile Section */}
+        <div className="flex items-center gap-4">
           {role ? (
-            <Link to={dashboardLink}>
-              <button
-                type="button"
-                className="text-white bg-gradient-to-br from-green-600 to-teal-500 hover:bg-gradient-to-bl 
-                  focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800 
-                  font-medium rounded-lg text-sm px-5 py-2.5 text-center"
-              >
-                Dashboard
-              </button>
-            </Link>
+            <>
+              <Link to={dashboardLink}>
+                <button
+                  type="button"
+                  className="text-white bg-gradient-to-br from-green-600 to-teal-500 hover:bg-gradient-to-bl 
+                    focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800 
+                    font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+                >
+                  Dashboard
+                </button>
+              </Link>
+              <div className="flex items-center space-x-2 text-gray-700">
+                <FaUserCircle className="text-2xl" />
+                <span className="hidden sm:inline text-sm font-medium">{name}</span>
+              </div>
+            </>
           ) : (
             <Link to="/signup">
               <button
@@ -89,4 +119,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default Navbar;

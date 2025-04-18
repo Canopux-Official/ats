@@ -38,12 +38,9 @@ const LoginPage = () => {
 
       if (data.success && data.token) {
         localStorage.setItem('token', JSON.stringify(data.token)); // ✅ Store token
+        localStorage.setItem('email', JSON.stringify(formData.email)); // Store email
         alert("Login successful!");
-        if (data.role === "RECRUITER") {
-          navigate("/jobr")
-        } else {
-          navigate("/job");
-        }// ✅ Redirect to dashboard (or home)
+        navigate('/');
       } else {
         alert(data.message || "Invalid credentials. Please try again.");
       }
@@ -52,8 +49,8 @@ const LoginPage = () => {
       alert(error.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
-    }
-  };
+    }
+  };
 
   return (
     <>

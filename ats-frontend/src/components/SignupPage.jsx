@@ -49,6 +49,8 @@ const SignupPage = () => {
   
       if (data.success && data.token) {
         localStorage.setItem('token', JSON.stringify(data.token)); // ✅ Store token
+        localStorage.setItem('email', formData.email); // Store email in localStorage
+
         alert("Signup successful!");
   
         // Reset form after successful signup
@@ -68,8 +70,8 @@ const SignupPage = () => {
       }
     } finally {
       setLoading(false);
-    }
-  };
+    }
+  };
   
   
 
@@ -84,6 +86,7 @@ const SignupPage = () => {
     setLoading(true);  
   
     try {
+      localStorage.setItem('email', formData.email)
       await registerUser(); // Call register function only if validation passes
     } finally {
       setLoading(false);
