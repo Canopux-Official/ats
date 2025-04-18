@@ -16,3 +16,8 @@ DATABASE_URL=postgresql://<username>:<password>@<host>:<port>/<database_name>
 
 # JWT secret key used for signing tokens
 JWT_SECRET=your_jwt_secret_key_here
+
+
+
+# ATS Flask - Environment Configuration
+GEMINI_API_KEY=AIzaSyC0tsffQxhK2nwrj2Auaxelp6os0xjHE4U
