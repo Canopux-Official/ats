@@ -47,7 +47,6 @@ const Navbar = () => {
     }
   };
 
-  const dashboardLink = role === "RECRUITER" ? "/dashboard/Admin" : "/dashboard/User";
 
   return (
     <nav id="home" className="bg-white shadow-md w-full fixed top-0 z-50 h-[60px] flex items-center">
@@ -86,16 +85,6 @@ const Navbar = () => {
         <div className="flex items-center gap-4">
           {role ? (
             <>
-              <Link to={dashboardLink}>
-                <button
-                  type="button"
-                  className="text-white bg-gradient-to-br from-green-600 to-teal-500 hover:bg-gradient-to-bl 
-                    focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800 
-                    font-medium rounded-lg text-sm px-5 py-2.5 text-center"
-                >
-                  Dashboard
-                </button>
-              </Link>
               <div className="flex items-center space-x-2 text-gray-700">
                 <FaUserCircle className="text-2xl" />
                 <span className="hidden sm:inline text-sm font-medium">{name}</span>

@@ -4,8 +4,6 @@ import SignupPage from './components/SignupPage';
 import LoginPage from './components/LoginPage';
 import JobSeeker from './components/JobSeeker';
 import JobRecruiter from './components/JobRecruiter';
-import Admin from './dashboard/Admin';
-import User from './dashboard/User'
 
 
 function App() {
@@ -16,8 +14,6 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/job" element={<JobSeeker />} />
         <Route path="/jobr" element={<JobRecruiter />} />
-        <Route path="/dashboard/Admin" element={<Admin />} />
-        <Route path="/dashboard/User" element={<User />} />
       </Routes>
   );
 }
