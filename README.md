@@ -20,4 +20,4 @@ JWT_SECRET=your_jwt_secret_key_here
 
 
 # ATS Flask - Environment Configuration
-GEMINI_API_KEY=AIzaSyC0tsffQxhK2nwrj2Auaxelp6os0xjHE4U
+GEMINI_API_KEY=your_gemini_api_key
