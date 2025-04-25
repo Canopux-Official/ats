@@ -1,10 +1,12 @@
-import { Controller, Get, Post, UseInterceptors, UploadedFile, UseGuards, Req, HttpException, HttpStatus, Body, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, UseInterceptors, UploadedFile, UseGuards, Req, HttpException, HttpStatus, Body, ForbiddenException, Param, Res } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { ResumeService } from './resume.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { Express } from 'express';
+import { Express, Response } from 'express';
+import { join } from 'path';
+import * as fs from 'fs';
 
 @Controller('resumes')
 export class ResumeController {
@@ -30,8 +32,8 @@ export class ResumeController {
     }),
   )
   //needs resume, jobRole
-  async uploadResume(@UploadedFile() file: Express.Multer.File, @Req() req,  @Body('jobRole') jobRole: string,
-  @Body('atsScore') atsScoreRaw: string,) {
+  async uploadResume(@UploadedFile() file: Express.Multer.File, @Req() req, @Body('jobRole') jobRole: string,
+    @Body('atsScore') atsScoreRaw: string,) {
     try {
       const userId = req.user.id; // Extract user ID from token
       const atsScore = atsScoreRaw ? parseFloat(atsScoreRaw) : undefined;
@@ -45,6 +47,8 @@ export class ResumeController {
       );
     }
   }
+
+
 
   // @UseGuards(JwtAuthGuard)
   // @Post('link-to-job')
@@ -80,6 +84,28 @@ export class ResumeController {
         HttpStatus.BAD_REQUEST,
       );
     }
+  }
+
+  //working but not efficient
+  @Get(':filename')
+  @UseGuards(JwtAuthGuard)
+  async getResumeFile(
+    @Param('filename') filename: string,
+    @Res() res: Response,
+    @Req() req
+  ) {
+    const filePath = join(__dirname, '..', '..', '..', 'uploads', filename);
+    console.log('Looking for file at:', filePath); // Add this line
+    console.log('Current __dirname:', __dirname); // Add this line
+
+    // Optional: restrict access based on role or ownership
+    if (req.user.role !== 'RECRUITER') throw new ForbiddenException();
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+
+    res.sendFile(filePath);
   }
 }
 

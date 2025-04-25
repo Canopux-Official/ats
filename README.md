@@ -17,6 +17,9 @@ DATABASE_URL=postgresql://<username>:<password>@<host>:<port>/<database_name>
 # JWT secret key used for signing tokens
 JWT_SECRET=your_jwt_secret_key_here
 
+#Base URL
+BASE_URL=http://localhost:3000
+
 
 
 # ATS Flask - Environment Configuration

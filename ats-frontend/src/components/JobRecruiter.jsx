@@ -15,15 +15,16 @@ const JobRecuriter = () => {
     jobType: "",
     companyName: "",
   });
-  // useEffect(() => {
-  //   fetchJobs();
-  // }, [refreshKey]);
+
+  const [refreshKey, setRefreshKey] = useState(0); // to manually trigger rerender
+  useEffect(() => {
+    fetchJobs();
+  }, [refreshKey]);
 
   const [showModal, setShowModal] = useState(false);
   const [createdJobs, setCreatedJobs] = useState(true); // State to track created jobs
   const [jobs, setJobs] = useState([]);
   const [resumes, setResumes] = useState([]);
-  const [refreshKey, setRefreshKey] = useState(0); // to manually trigger rerender
   const navigate = useNavigate(); // navigate hook
 
   //this is the sample response stored in resume state after the corresponding function is called
@@ -116,13 +117,13 @@ const JobRecuriter = () => {
     try {
       const stored = JSON.parse(localStorage.getItem("token"));
       const token = stored.token;
-  
+
       const response = await axios.get(`http://localhost:3000/jobs/${jobId}/resumes`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-  
+
       console.log("Fetched resumes for job:", response.data);
       setResumes(response.data); // use your React state setter here
     } catch (error) {
@@ -130,30 +131,40 @@ const JobRecuriter = () => {
     }
   };
 
-  //calling the funtion, make sure to pass the jobId
-  //use the below function example when rendering all jobs in the ui
-  // {jobs.map((job) => (
-  //   <div
-  //     key={job.id}
-  //     onClick={() => handleJobClick(job.id)} // 👈 Pass the jobId here
-  //     className="p-4 border-b cursor-pointer hover:bg-gray-100"
-  //   >
-  //     <h3 className="text-lg font-semibold">{job.jobRole}</h3>
-  //     <p>{job.description}</p>
-  //     <p className="text-sm text-gray-500">Posted on: {new Date(job.createdAt).toLocaleDateString()}</p>
-  //   </div>
-  // ))}
-  //the response will be stored in resume
-  
+
   const handleJobClick = (jobId) => {
     fetchResumesForJob(jobId, setResumes);
   };
 
+  const downloadResume = async (filename) => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("token"));
+      const token = stored?.token;
+  
+      const response = await axios.get(`http://localhost:3000/resumes/${filename}`, {
+        responseType: 'blob', // So the file is handled as binary
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      // Create a blob and trigger download
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href); // Clean up memory
+    } catch (error) {
+      console.error("Failed to download resume:", error.response?.data || error.message);
+    }
+  };
+  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setShowModal(true);
-    createJobs();
-
+    createJobs();      // 🔁 This function posts the job
   };
 
   const closeModal = () => {
@@ -288,16 +299,60 @@ const JobRecuriter = () => {
         </div>
       </div>
 
-      {/* Modal */}
-      {showModal && (
+      {/* Job Listings */}
+      <div className="w-full md:w-1/2 p-6">
+        {jobs.length === 0 ? (
+          <p>No jobs found. Please post a job.</p>
+        ) : (
+          jobs.map((job) => (
+            <div
+              key={job.id}
+              onClick={() => handleJobClick(job.id)}
+              className="p-4 border-b cursor-pointer hover:bg-gray-100"
+            >
+              <h3 className="text-lg font-semibold">{job.jobRole}</h3>
+              <p>{job.description}</p>
+              <p className="text-sm text-gray-500">Posted on: {new Date(job.createdAt).toLocaleDateString()}</p>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Resumes Modal */}
+      {resumes.length > 0 && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
           <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm text-center">
             <h3 className="text-2xl font-semibold text-pink-600 mb-4">
-              🎉 Job Posted!
+              Resumes for this Job
             </h3>
-            <p className="text-gray-700 mb-6">
-              Your job listing has been submitted successfully.
-            </p>
+            {resumes.map((resume) => (
+              <div key={resume.id} className="mb-4">
+                <p className="text-gray-700">File: {resume.filename}</p>
+                <p className="text-sm text-gray-500">ATS Score: {resume.atsScore}</p>
+                <button
+                  onClick={() => downloadResume(resume.filename)}
+                  className="text-pink-600 hover:underline"
+                >
+                  View Resume
+                  </button>
+              </div>
+            ))}
+            <button
+              onClick={closeModal}
+              className="px-6 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for Job Posting Success */}
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm text-center">
+            <h3 className="text-2xl font-semibold text-pink-600 mb-4">🎉 Job Posted!</h3>
+            <p className="text-gray-700 mb-6">Your job listing has been submitted successfully.</p>
             <button
               onClick={closeModal}
               className="px-6 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700"

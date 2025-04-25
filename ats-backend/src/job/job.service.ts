@@ -70,14 +70,19 @@ export class JobService {
     });
   
     // Extract resume details
-    return jobResumes.map((jr) => ({
-      id: jr.resume.id,
-      filename: jr.resume.filename,
-      path: jr.resume.path, // This can be used to open/download the file
-      atsScore: jr.resume.atsScore,
-      uploadedAt: jr.resume.uploadedAt,
-      user: jr.resume.user,
-    }));
+    return jobResumes.map((jr) => {
+      const fileName = jr.resume.path.split('/').pop(); // Extract filename from full path
+      const protectedPath = `${process.env.BASE_URL}/uploads/${fileName}`; // Use secure route
+  
+      return {
+        id: jr.resume.id,
+        filename: jr.resume.filename,
+        path: protectedPath,
+        atsScore: jr.resume.atsScore,
+        uploadedAt: jr.resume.uploadedAt,
+        user: jr.resume.user,
+      };
+    });
   }
   
 
