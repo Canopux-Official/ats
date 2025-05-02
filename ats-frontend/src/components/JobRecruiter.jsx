@@ -15,7 +15,6 @@ const JobRecuriter = () => {
     jobType: "",
     companyName: "",
   });
-
   const [refreshKey, setRefreshKey] = useState(0); // to manually trigger rerender
   useEffect(() => {
     fetchJobs();
@@ -27,38 +26,11 @@ const JobRecuriter = () => {
   const [resumes, setResumes] = useState([]);
   const navigate = useNavigate(); // navigate hook
 
-  //this is the sample response stored in resume state after the corresponding function is called
-  // [
-  //   {
-  //     "id": "resume001",
-  //     "filename": "john_doe_resume.pdf",
-  //     "path": "uploads/john_doe_resume.pdf", //use this to display or download the file
-  //     "mimetype": "application/pdf",
-  //     "size": 204800,
-  //     "uploadedAt": "2025-04-11T10:15:30.000Z",
-  //     "jobRole": "Frontend Web Developer",
-  //     "atsScore": 92.5,
-  //     "userId": "user123"
-  //   },
-  //   {
-  //     "id": "resume002",
-  //     "filename": "jane_smith_resume.pdf",
-  //     "path": "uploads/jane_smith_resume.pdf",
-  //     "mimetype": "application/pdf",
-  //     "size": 198000,
-  //     "uploadedAt": "2025-04-10T08:45:00.000Z",
-  //     "jobRole": "Frontend Web Developer",
-  //     "atsScore": 87.0,
-  //     "userId": "user456"
-  //   }
-  // ]
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  //fetches all jobs posted by the recruiter
-  //working fine, but need to handle the case when the recruiter has no jobs posted
   const fetchJobs = async () => {
     try {
       const stored = JSON.parse(localStorage.getItem("token"));
@@ -85,32 +57,36 @@ const JobRecuriter = () => {
   const createJobs = async () => {
     try {
       const stored = JSON.parse(localStorage.getItem("token"));
-      const token = stored.token;
-      if (!token) {
-        console.error("No token found. Please log in again.");
-        return;
-      }
-      setCreatedJobs(false)
-      const response = await axios.post(
-        'http://localhost:3000/jobs',
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      //accept a success message from the backend Not created till now
-      console.log('Job posted:', response.data);
-      // Show success message or navigate
-      setCreatedJobs(true)
+      const token = stored?.token;
+      if (!token) throw new Error("No token found");
+  
+      setCreatedJobs(false);
+      const response = await axios.post("http://localhost:3000/jobs", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      console.log("Job posted:", response.data);
+      setFormData({
+        jobRole: "",
+        description: "",
+        skills: "",
+        experience: "",
+        cgpa: "",
+        jobType: "",
+        companyName: "",
+      });
+      triggerJobListUpdate()
+      return true; // success
     } catch (error) {
-      console.error('Error posting job:', error.response?.data || error.message);
-      // Show error message to user
+      console.error("Error posting job:", error.response?.data || error.message);
+      return false; // failure
     } finally {
-      setCreatedJobs(true)
+      setCreatedJobs(true);
     }
-  }
+  };
+  
 
   //it fetches all the resumes for a particular job
   const fetchResumesForJob = async (jobId, setResumes) => {
@@ -163,19 +139,19 @@ const JobRecuriter = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setShowModal(true);
-    createJobs();      // 🔁 This function posts the job
+    const success = await createJobs();
+    if (success) {
+      setShowModal(true);
+      triggerJobListUpdate();
+    }
   };
 
   const closeModal = () => {
     setShowModal(false);
+    setResumes([]);
+    console.log("Modal closed");
   };
 
-  //create a section where the recruiter can see all the jobs posted by him
-  //handle the case of the recuriter has no jobs
-  //if (jobs.length === 0) {
-  // return <p>No jobs found.</p>;
-  // }
   return (
     <div className="relative flex min-h-screen overflow-hidden bg-gradient-to-br from-pink-200 to-blue-200">
       {/* 🔙 Back Arrow Button */}
