@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; // for navigation
 import { FaArrowLeft } from "react-icons/fa"; // left arrow icon
+import { jwtDecode } from "jwt-decode";
 import hiring from "../assets/hiring.json";
 import Lottie from "lottie-react";
 import axios from 'axios';
@@ -16,15 +17,52 @@ const JobRecuriter = () => {
     companyName: "",
   });
   const [refreshKey, setRefreshKey] = useState(0); // to manually trigger rerender
-  useEffect(() => {
-    fetchJobs();
-  }, [refreshKey]);
+  const [accessDenied, setAccessDenied] = useState(false);
+  const navigate = useNavigate();
 
   const [showModal, setShowModal] = useState(false);
   const [createdJobs, setCreatedJobs] = useState(true); // State to track created jobs
   const [jobs, setJobs] = useState([]);
   const [resumes, setResumes] = useState([]);
-  const navigate = useNavigate(); // navigate hook
+  // navigate hook
+
+  useEffect(() => {
+    const stored = localStorage.getItem("token");
+    if (!stored) {
+      alert("Please login to access this page.");
+      return navigate("/login"); // Redirect to login
+    }
+
+    try {
+      const token = JSON.parse(stored).token;
+      const decoded = jwtDecode(token);
+      if (decoded.role !== "RECRUITER") {
+        setAccessDenied(true);
+      } else {
+        fetchJobs()
+      }
+    } catch (err) {
+      console.error("Invalid token format:", err);
+      return navigate("/login");
+    }
+  }, [navigate]);
+
+  if (accessDenied) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-red-100">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-red-600 mb-4">Access Denied</h1>
+          <p className="text-gray-700">You must be a recruiter to view this page.</p>
+          <button
+          onClick={() => navigate("/")}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+        >
+          Go to Home
+        </button>
+        </div>
+      </div>
+    );
+  }
 
 
   const handleChange = (e) => {
@@ -59,14 +97,14 @@ const JobRecuriter = () => {
       const stored = JSON.parse(localStorage.getItem("token"));
       const token = stored?.token;
       if (!token) throw new Error("No token found");
-  
+
       setCreatedJobs(false);
       const response = await axios.post("http://localhost:3000/jobs", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-  
+
       console.log("Job posted:", response.data);
       setFormData({
         jobRole: "",
@@ -86,7 +124,7 @@ const JobRecuriter = () => {
       setCreatedJobs(true);
     }
   };
-  
+
 
   //it fetches all the resumes for a particular job
   const fetchResumesForJob = async (jobId, setResumes) => {
@@ -116,14 +154,14 @@ const JobRecuriter = () => {
     try {
       const stored = JSON.parse(localStorage.getItem("token"));
       const token = stored?.token;
-  
+
       const response = await axios.get(`http://localhost:3000/resumes/${filename}`, {
         responseType: 'blob', // So the file is handled as binary
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-  
+
       // Create a blob and trigger download
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const link = document.createElement('a');
@@ -135,7 +173,7 @@ const JobRecuriter = () => {
       console.error("Failed to download resume:", error.response?.data || error.message);
     }
   };
-  
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -310,7 +348,7 @@ const JobRecuriter = () => {
                   className="text-pink-600 hover:underline"
                 >
                   View Resume
-                  </button>
+                </button>
               </div>
             ))}
             <button

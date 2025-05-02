@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 import Marquee from "react-fast-marquee";
 import { UploadCloud, ArrowRightCircle, Briefcase } from "lucide-react";
 import axios from "axios";
@@ -15,10 +16,45 @@ const JobSeeker = () => {
   const [evaltext, setEvaltext] = useState({});
   const [topSuggestions, setTopSuggestions] = useState([]); // if jobRole is None, this will hold the top 3 suggestions
   const navigate = useNavigate();
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
-    fetchAllJobs();
-  }, []);
+      const stored = localStorage.getItem("token");
+      if (!stored) {
+        alert("Please login to access this page.");
+        return navigate("/login"); // Redirect to login
+      }
+  
+      try {
+        const token = JSON.parse(stored).token;
+        const decoded = jwtDecode(token);
+        if (decoded.role !== "JOB_SEEKER") {
+          setAccessDenied(true);
+        } else {
+          fetchAllJobs()
+        }
+      } catch (err) {
+        console.error("Invalid token format:", err);
+        return navigate("/login");
+      }
+    }, [navigate]);
+  
+    if (accessDenied) {
+      return (
+        <div className="flex items-center justify-center h-screen bg-red-100">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-red-600 mb-4">Access Denied</h1>
+            <p className="text-gray-700">You must be a job seeker to view this page.</p>
+            <button
+            onClick={() => navigate("/")}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+          >
+            Go to Home
+          </button>
+          </div>
+        </div>
+      );
+    }
 
   //this calls all the jobs in the database regardless of the job description, need to optimise it
   const fetchAllJobs = async () => {
