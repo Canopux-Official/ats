@@ -1,12 +1,12 @@
 // src/job/job.service.ts
 
-import { Injectable, ForbiddenException} from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateJobDto } from './create-job.dto';
 
 @Injectable()
 export class JobService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async createJob(createJobDto: CreateJobDto, recruiterId: string) {
     //return success message if creating job failed
@@ -26,6 +26,20 @@ export class JobService {
       },
     });
   }
+
+  async getJobsByIds(ids: string[]) {
+    const filteredIds = ids.filter((id) => id !== undefined && id !== null);
+    if (filteredIds.length === 0) return [];
+
+    return this.prisma.job.findMany({
+      where: {
+        id: {
+          in: filteredIds,
+        },
+      },
+    });
+  }
+
   async getAllJobs() {
     return this.prisma.job.findMany({
       orderBy: { createdAt: 'desc' },
@@ -37,11 +51,11 @@ export class JobService {
     const job = await this.prisma.job.findUnique({
       where: { id: jobId },
     });
-  
+
     if (!job || job.recruiterId !== recruiterId) {
       throw new ForbiddenException('You are not authorized to view these resumes');
     }
-  
+
     // Get resumes linked to the job
     const jobResumes = await this.prisma.jobResume.findMany({
       where: { jobId },
@@ -68,12 +82,12 @@ export class JobService {
         },
       },
     });
-  
+
     // Extract resume details
     return jobResumes.map((jr) => {
       const fileName = jr.resume.path.split('/').pop(); // Extract filename from full path
       const protectedPath = `${process.env.BASE_URL}/uploads/${fileName}`; // Use secure route
-  
+
       return {
         id: jr.resume.id,
         filename: jr.resume.filename,
@@ -84,16 +98,16 @@ export class JobService {
       };
     });
   }
-  
+
 
   async deleteJob(jobId: string, recruiterId: string) {
     // Check if job exists and belongs to the recruiter
     const job = await this.prisma.job.findUnique({ where: { id: jobId } });
-  
+
     if (!job || job.recruiterId !== recruiterId) {
       return null;
     }
-  
+
     await this.prisma.job.delete({ where: { id: jobId } });
     return true;
   }

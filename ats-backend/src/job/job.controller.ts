@@ -4,7 +4,7 @@ import {
     Controller,
     Post, Delete,
     Body,
-    UseGuards,
+    UseGuards, Query,
     Req,
     Get,
     ForbiddenException, Param, NotFoundException
@@ -39,6 +39,13 @@ export class JobController {
     @Get()
     async getAllJobs() {
         return this.jobService.getAllJobs();
+    }
+
+    //get all the job details from selectedJobRole
+    @Get('by-ids')
+    async getJobsByIds(@Query('ids') ids: string[] | string) {
+        const idArray = Array.isArray(ids) ? ids : [ids]; // normalize query param
+        return this.jobService.getJobsByIds(idArray);
     }
     //get top 5 jobs by atsScore
     @UseGuards(JwtAuthGuard)

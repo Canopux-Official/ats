@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom"; // for navigation
 import { FaArrowLeft } from "react-icons/fa"; // left arrow icon
 import { jwtDecode } from "jwt-decode";
@@ -24,6 +24,7 @@ const JobRecuriter = () => {
   const [createdJobs, setCreatedJobs] = useState(true); // State to track created jobs
   const [jobs, setJobs] = useState([]);
   const [resumes, setResumes] = useState([]);
+  const [selectedJob, setSelectedJob] = useState(null)
   // navigate hook
 
   useEffect(() => {
@@ -54,11 +55,11 @@ const JobRecuriter = () => {
           <h1 className="text-3xl font-bold text-red-600 mb-4">Access Denied</h1>
           <p className="text-gray-700">You must be a recruiter to view this page.</p>
           <button
-          onClick={() => navigate("/")}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-        >
-          Go to Home
-        </button>
+            onClick={() => navigate("/")}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+          >
+            Go to Home
+          </button>
         </div>
       </div>
     );
@@ -69,7 +70,7 @@ const JobRecuriter = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     try {
       const stored = JSON.parse(localStorage.getItem("token"));
       const token = stored?.token;
@@ -85,7 +86,7 @@ const JobRecuriter = () => {
     } catch (error) {
       console.error("Failed to fetch recruiter jobs:", error.response?.data || error.message);
     }
-  };
+  });
 
   // Call this after posting a new job to re-fetch
   const triggerJobListUpdate = () => {
@@ -147,7 +148,11 @@ const JobRecuriter = () => {
 
 
   const handleJobClick = (jobId) => {
-    fetchResumesForJob(jobId, setResumes);
+    const job = jobs.find(j => j.id === jobId);
+    if (job) {
+      setSelectedJob(job);
+      fetchResumesForJob(jobId, setResumes);
+    }
   };
 
   const downloadResume = async (filename) => {
@@ -185,6 +190,7 @@ const JobRecuriter = () => {
   };
 
   const closeModal = () => {
+    setSelectedJob(null);
     setShowModal(false);
     setResumes([]);
     console.log("Modal closed");
@@ -218,7 +224,7 @@ const JobRecuriter = () => {
             <ul className="list-disc list-inside space-y-1 text-sm">
               <li>📢 Post a job with details and requirements</li>
               <li>🤖 Our AI screens incoming resumes</li>
-              <li>🎯 Get top-matched candidates instantly</li>
+              <li>🎯 Get top-matched candidates</li>
             </ul>
           </div>
         </div>
@@ -313,8 +319,7 @@ const JobRecuriter = () => {
         </div>
       </div>
 
-      {/* Job Listings */}
-      <div className="w-full md:w-1/2 p-6">
+      <div className="w-full md:w-1/2 p-6 mt-4">
         {jobs.length === 0 ? (
           <p>No jobs found. Please post a job.</p>
         ) : (
@@ -332,34 +337,55 @@ const JobRecuriter = () => {
         )}
       </div>
 
-      {/* Resumes Modal */}
-      {resumes.length > 0 && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm text-center">
+      {/* Detailed Job + Resumes Modal */}
+      {selectedJob && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto text-black">
             <h3 className="text-2xl font-semibold text-pink-600 mb-4">
-              Resumes for this Job
+              Job Details: {selectedJob.jobRole}
             </h3>
-            {resumes.map((resume) => (
-              <div key={resume.id} className="mb-4">
-                <p className="text-gray-700">File: {resume.filename}</p>
-                <p className="text-sm text-gray-500">ATS Score: {resume.atsScore}</p>
-                <button
-                  onClick={() => downloadResume(resume.filename)}
-                  className="text-pink-600 hover:underline"
-                >
-                  View Resume
-                </button>
+            <div className="text-left space-y-2 mb-6">
+              <p><strong>Description:</strong> {selectedJob.description}</p>
+              <p><strong>Company Name:</strong> {selectedJob.companyName}</p>
+              <p><strong>CGPA Requirement:</strong> {selectedJob.cgpa}</p>
+              <p><strong>Experience:</strong> {selectedJob.experience} years</p>
+              <p><strong>Job Type:</strong> {selectedJob.jobType}</p>
+              <p><strong>Skills:</strong> {selectedJob.skills}</p>
+              <p><strong>Posted On:</strong> {new Date(selectedJob.createdAt).toLocaleString()}</p>
+            </div>
+
+            {resumes.length > 0 ? (
+              <div className="mt-4">
+                <h4 className="text-xl font-semibold text-gray-700 mb-2">Resumes for this Job</h4>
+                {resumes.map((resume) => (
+                  <div key={resume.id} className="mb-4 border rounded p-3">
+                    <p className="text-gray-700">File: {resume.filename}</p>
+                    <p className="text-sm text-gray-500">ATS Score: {resume.atsScore}</p>
+                    <button
+                      onClick={() => downloadResume(resume.filename)}
+                      className="text-pink-600 hover:underline"
+                    >
+                      View Resume
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-            <button
-              onClick={closeModal}
-              className="px-6 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700"
-            >
-              Close
-            </button>
+            ) : (
+              <p className="text-sm text-gray-500">No resumes submitted yet.</p>
+            )}
+
+            <div className="mt-6 text-right">
+              <button
+                onClick={closeModal}
+                className="px-6 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
+
 
       {/* Modal for Job Posting Success */}
       {showModal && (

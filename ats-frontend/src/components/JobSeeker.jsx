@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import Marquee from "react-fast-marquee";
 import { UploadCloud, ArrowRightCircle, Briefcase } from "lucide-react";
 import axios from "axios";
+import qs from 'qs';
 
 const JobSeeker = () => {
   const [jobRole, setJobRole] = useState({ role: "", ids: [] }); //user selected job role
@@ -17,44 +18,49 @@ const JobSeeker = () => {
   const [topSuggestions, setTopSuggestions] = useState([]); // if jobRole is None, this will hold the top 3 suggestions
   const navigate = useNavigate();
   const [accessDenied, setAccessDenied] = useState(false);
+  const [selectedJobDetails, setSelectedJobDetails] = useState([]);
+  const [expandedRole, setExpandedRole] = useState(null);
+  const [selectedRole, setSelectedRole] = useState(null)
 
   useEffect(() => {
-      const stored = localStorage.getItem("token");
-      if (!stored) {
-        alert("Please login to access this page.");
-        return navigate("/login"); // Redirect to login
-      }
-  
-      try {
-        const token = JSON.parse(stored).token;
-        const decoded = jwtDecode(token);
-        if (decoded.role !== "JOB_SEEKER") {
-          setAccessDenied(true);
-        } else {
+    const stored = localStorage.getItem("token");
+    if (!stored) {
+      alert("Please login to access this page.");
+      return navigate("/login"); // Redirect to login
+    }
+
+    try {
+      const token = JSON.parse(stored).token;
+      const decoded = jwtDecode(token);
+      if (decoded.role !== "JOB_SEEKER") {
+        setAccessDenied(true);
+      } else {
+        if (allJobs.length === 0) {
           fetchAllJobs()
         }
-      } catch (err) {
-        console.error("Invalid token format:", err);
-        return navigate("/login");
       }
-    }, [navigate]);
-  
-    if (accessDenied) {
-      return (
-        <div className="flex items-center justify-center h-screen bg-red-100">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-red-600 mb-4">Access Denied</h1>
-            <p className="text-gray-700">You must be a job seeker to view this page.</p>
-            <button
+    } catch (err) {
+      console.error("Invalid token format:", err);
+      return navigate("/login");
+    }
+  }, [navigate]);
+
+  if (accessDenied) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-red-100">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-red-600 mb-4">Access Denied</h1>
+          <p className="text-gray-700">You must be a job seeker to view this page.</p>
+          <button
             onClick={() => navigate("/")}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
           >
             Go to Home
           </button>
-          </div>
         </div>
-      );
-    }
+      </div>
+    );
+  }
 
   //this calls all the jobs in the database regardless of the job description, need to optimise it
   const fetchAllJobs = async () => {
@@ -88,6 +94,34 @@ const JobSeeker = () => {
       );
     }
   };
+
+  //fetching job details for selected Job Role
+  const fetchJobDetailsByIds = async (jobIds) => {
+    try {
+      console.log("inside calling function", jobIds)
+      if (!Array.isArray(jobIds) || jobIds.length === 0 || jobIds.some(id => !id)) {
+        console.warn("Invalid jobIds passed to fetchJobDetailsByIds:", jobIds);
+        return;
+      }
+      const response = await axios.get(`http://localhost:3000/jobs/by-ids`, {
+        params: {
+          ids: jobIds, // Axios handles array serialization: ?ids=1&ids=2
+        },
+        paramsSerializer: (params) => qs.stringify(params, { arrayFormat: 'repeat' }),
+      });
+      setSelectedJobDetails(response.data); // adjust based on your backend structure
+    } catch (error) {
+      console.error("Failed to fetch job details", error);
+    }
+  };
+
+  const jobDetailsMap = useMemo(() => {
+    const map = {};
+    selectedJobDetails.forEach((job) => {
+      map[job.id] = job;
+    });
+    return map;
+  }, [selectedJobDetails]);
 
   const modelCallForResume = async () => {
     if (!resume) {
@@ -205,6 +239,13 @@ const JobSeeker = () => {
     }
   };
 
+  const handleRoleSelect = async (role, jobIds) => {
+    setSelectedRole({ role, jobIds });
+    await fetchJobDetailsByIds(jobIds);
+    setExpandedRole(role); 
+  };
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!jobRole || !resume) {
@@ -314,19 +355,44 @@ const JobSeeker = () => {
                     (job) => job.role === selectedRole
                   );
                   if (fullJobObj) {
+                    console.log(fullJobObj)
                     setJobRole(fullJobObj);
+                    handleRoleSelect(fullJobObj.role, fullJobObj.ids); 
                   }
                 }}
                 required
               >
-                <option value="None">-- Choose a Job Role --</option>
-                {uniqueJobs.map((entry, index) => (
-                  <option key={index} value={entry.role}>
-                    {entry.role}
+                <option value="">-- Choose a Job Role --</option>
+                {uniqueJobs.map(({ role }) => (
+                  <option key={role} value={role}>
+                    {role}
                   </option>
                 ))}
               </select>
+
+              {/* Show job details when a role is selected */}
+              {expandedRole && (
+                <div className="mt-4 space-y-4">
+                  {jobRole?.ids?.map((jobId) => {
+                    const job = jobDetailsMap[jobId];
+                    if (!job) return <p key={jobId}>Loading...</p>;
+
+                    return (
+                      <div key={job.id} className="border p-3 rounded bg-gray-50 shadow">
+                        <p><strong>Job Title:</strong> {job.jobRole}</p>
+                        <p><strong>Description:</strong> {job.description}</p>
+                        <p><strong>Skills:</strong> {job.skills}</p>
+                        <p><strong>Experience:</strong> {job.experience} years</p>
+                        <p><strong>CGPA Requirement:</strong> {job.cgpa}</p>
+                        <p><strong>Job Type:</strong> {job.jobType}</p>
+                        <p><strong>Company Name:</strong> {job.companyName}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+
 
             {/* Resume Upload */}
             <div className="text-center">
@@ -355,8 +421,8 @@ const JobSeeker = () => {
             <button
               type="submit"
               className={`w-full py-3 px-6 rounded-lg font-bold text-lg transition duration-300 shadow-md ${loading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-600 text-white"
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-600 text-white"
                 }`}
               disabled={loading}
             >

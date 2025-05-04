@@ -38,3 +38,8 @@ To clear the database:
 ```bash
 npm run clear-db
 ```
+
+## Future Enhancement
+
+1. Handle Gibberish Resume
+2. Integrate ElasticSearch
