@@ -41,26 +41,12 @@ const JobSeeker = () => {
       }
     } catch (err) {
       console.error("Invalid token format:", err);
-      return navigate("/login");
+      navigate("/login");
+      return
     }
   }, [navigate]);
 
-  if (accessDenied) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-red-100">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-red-600 mb-4">Access Denied</h1>
-          <p className="text-gray-700">You must be a job seeker to view this page.</p>
-          <button
-            onClick={() => navigate("/")}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-          >
-            Go to Home
-          </button>
-        </div>
-      </div>
-    );
-  }
+  
 
   //this calls all the jobs in the database regardless of the job description, need to optimise it
   const fetchAllJobs = async () => {
@@ -242,7 +228,7 @@ const JobSeeker = () => {
   const handleRoleSelect = async (role, jobIds) => {
     setSelectedRole({ role, jobIds });
     await fetchJobDetailsByIds(jobIds);
-    setExpandedRole(role); 
+    setExpandedRole(role);
   };
 
 
@@ -292,6 +278,23 @@ const JobSeeker = () => {
       setLoading(false);
     }
   };
+
+  if (accessDenied) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-red-100">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-red-600 mb-4">Access Denied</h1>
+          <p className="text-gray-700">You must be a job seeker to view this page.</p>
+          <button
+            onClick={() => navigate("/")}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+          >
+            Go to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 text-black flex flex-col items-center py-10">
@@ -357,7 +360,7 @@ const JobSeeker = () => {
                   if (fullJobObj) {
                     console.log(fullJobObj)
                     setJobRole(fullJobObj);
-                    handleRoleSelect(fullJobObj.role, fullJobObj.ids); 
+                    handleRoleSelect(fullJobObj.role, fullJobObj.ids);
                   }
                 }}
                 required
@@ -373,6 +376,9 @@ const JobSeeker = () => {
               {/* Show job details when a role is selected */}
               {expandedRole && (
                 <div className="mt-4 space-y-4">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                    Available Jobs for the Role: <span className="text-blue-600">{expandedRole}</span>
+                  </h3>
                   {jobRole?.ids?.map((jobId) => {
                     const job = jobDetailsMap[jobId];
                     if (!job) return <p key={jobId}>Loading...</p>;
@@ -391,6 +397,7 @@ const JobSeeker = () => {
                   })}
                 </div>
               )}
+
             </div>
 
 

@@ -48,6 +48,12 @@ const JobRecuriter = () => {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    console.log("rerendring")
+    fetchJobs()
+  }, [refreshKey])
+  
+
   if (accessDenied) {
     return (
       <div className="flex items-center justify-center h-screen bg-red-100">
@@ -90,6 +96,7 @@ const JobRecuriter = () => {
 
   // Call this after posting a new job to re-fetch
   const triggerJobListUpdate = () => {
+    console.log("trigger working")
     setRefreshKey(prev => prev + 1);
   };
 
@@ -180,12 +187,30 @@ const JobRecuriter = () => {
   };
 
 
+  //delete a job
+  const deleteJobPost = async (jobId) => {
+    const stored = JSON.parse(localStorage.getItem("token"));
+    const token = stored?.token;
+    try {
+      const response = await axios.delete(`http://localhost:3000/jobs/${jobId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("Job deleted:", response.data.message);
+      return response.data;
+    } catch (error) {
+      console.error("Error deleting job:", error.response?.data?.message || error.message);
+      throw error;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const success = await createJobs();
     if (success) {
       setShowModal(true);
-      triggerJobListUpdate();
     }
   };
 
@@ -375,6 +400,22 @@ const JobRecuriter = () => {
             )}
 
             <div className="mt-6 text-right">
+              <button
+                onClick={async () => {
+                  try {
+                    await deleteJobPost(selectedJob.id);
+                    alert("Job deleted successfully");
+                    triggerJobListUpdate()
+                    closeModal();
+                    // Optionally refresh job list
+                  } catch (err) {
+                    alert("Failed to delete job: " + err.response?.data?.message || err.message);
+                  }
+                }}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Delete Job
+              </button>
               <button
                 onClick={closeModal}
                 className="px-6 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700"
