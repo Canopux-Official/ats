@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom"; // for navigation
-import { FaArrowLeft } from "react-icons/fa"; // left arrow icon
+import { FaArrowLeft, FaBriefcase, FaBuilding, FaCalendarAlt, FaGraduationCap, FaStar } from "react-icons/fa";
 import { jwtDecode } from "jwt-decode";
 import hiring from "../assets/hiring.json";
 import Lottie from "lottie-react";
@@ -43,7 +43,9 @@ const JobRecuriter = () => {
         fetchJobs()
       }
     } catch (err) {
-      console.error("Invalid token format:", err);
+      console.error("Invalid token format or error decoding:", err);
+      localStorage.removeItem("token"); // Clear invalid token
+      alert("Session invalid or expired. Please login again.");
       return navigate("/login");
     }
   }, [navigate]);
@@ -54,22 +56,7 @@ const JobRecuriter = () => {
   }, [refreshKey])
   
 
-  if (accessDenied) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-red-100">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-red-600 mb-4">Access Denied</h1>
-          <p className="text-gray-700">You must be a recruiter to view this page.</p>
-          <button
-            onClick={() => navigate("/")}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-          >
-            Go to Home
-          </button>
-        </div>
-      </div>
-    );
-  }
+  
 
 
   const handleChange = (e) => {
@@ -189,6 +176,10 @@ const JobRecuriter = () => {
 
   //delete a job
   const deleteJobPost = async (jobId) => {
+    if (!window.confirm("Are you sure you want to delete this job post? This action cannot be undone.")) {
+      return; // Stop if user cancels
+    }
+
     const stored = JSON.parse(localStorage.getItem("token"));
     const token = stored?.token;
     try {
@@ -220,6 +211,23 @@ const JobRecuriter = () => {
     setResumes([]);
     console.log("Modal closed");
   };
+
+  if (accessDenied) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-red-100">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-red-600 mb-4">Access Denied</h1>
+          <p className="text-gray-700">You must be a recruiter to view this page.</p>
+          <button
+            onClick={() => navigate("/")}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+          >
+            Go to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex min-h-screen overflow-hidden bg-gradient-to-br from-pink-200 to-blue-200">
@@ -344,23 +352,57 @@ const JobRecuriter = () => {
         </div>
       </div>
 
-      <div className="w-full md:w-1/2 p-6 mt-4">
-        {jobs.length === 0 ? (
-          <p>No jobs found. Please post a job.</p>
-        ) : (
-          jobs.map((job) => (
-            <div
-              key={job.id}
-              onClick={() => handleJobClick(job.id)}
-              className="p-4 border-b cursor-pointer hover:bg-gray-100"
-            >
-              <h3 className="text-lg font-semibold">{job.jobRole}</h3>
-              <p>{job.description}</p>
-              <p className="text-sm text-gray-500">Posted on: {new Date(job.createdAt).toLocaleDateString()}</p>
-            </div>
-          ))
-        )}
-      </div>
+      <div className="w-full md:w-1/2 p-4 md:p-6 order-2 md:order-none">
+          <h2 className="text-3xl font-bold mb-6 text-center md:text-left text-pink-800">
+             Your Posted Jobs ✨
+          </h2>
+           {/* Make this section scrollable if it exceeds viewport height */}
+           <div className="space-y-4 max-h-[calc(100vh-12rem)] md:max-h-[calc(100vh-8rem)] overflow-y-auto pr-2"> {/* Added padding-right for scrollbar space */}
+            {jobs.length === 0 ? (
+              <div className="text-center py-10 px-6 bg-white rounded-xl shadow-md border border-gray-200">
+                <FaBriefcase className="mx-auto text-4xl text-gray-400 mb-4" />
+                <p className="text-gray-500 font-medium">You haven't posted any jobs yet.</p>
+                <p className="text-sm text-gray-400 mt-2">Use the form to create your first job listing!</p>
+              </div>
+            ) : (
+              jobs.map((job) => (
+                // Improved Job Card
+                <div
+                  key={job.id}
+                  onClick={() => handleJobClick(job.id)} // Pass the whole job object
+                  className="bg-white rounded-xl shadow-lg p-5 cursor-pointer transition duration-300 ease-in-out hover:shadow-xl hover:ring-2 hover:ring-pink-300 border border-transparent hover:border-pink-300 group"
+                >
+                  {/* Card Header */}
+                  <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-xl font-semibold text-pink-700 group-hover:text-pink-800">
+                          {job.jobRole}
+                       </h3>
+                       <span className="text-xs bg-pink-100 text-pink-800 px-2 py-1 rounded-full font-medium">
+                           {job.jobType}
+                       </span>
+                  </div>
+
+                  {/* Company Info */}
+                  <div className="flex items-center text-sm text-gray-600 mb-3">
+                      <FaBuilding className="mr-2 text-gray-400"/> {job.companyName}
+                  </div>
+
+                  {/* Key Details Row */}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-700 mb-3 border-t pt-3 mt-3 border-gray-100">
+                     <span className="flex items-center"><FaStar className="mr-1 text-yellow-500"/> Exp: {job.experience} yrs</span>
+                     <span className="flex items-center"><FaGraduationCap className="mr-1 text-blue-500"/> CGPA: {job.cgpa}+</span>
+                     {/* Can add skills count or other details if needed */}
+                  </div>
+
+                  {/* Footer: Posted Date */}
+                  <div className="text-xs text-gray-400 flex items-center justify-end">
+                      <FaCalendarAlt className="mr-1"/> Posted: {new Date(job.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
 
       {/* Detailed Job + Resumes Modal */}
       {selectedJob && (
@@ -412,7 +454,7 @@ const JobRecuriter = () => {
                     alert("Failed to delete job: " + err.response?.data?.message || err.message);
                   }
                 }}
-                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                className="px-6 py-2 mr-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
               >
                 Delete Job
               </button>
