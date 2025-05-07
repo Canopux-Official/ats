@@ -22,6 +22,9 @@ const JobSeeker = () => {
   const [expandedRole, setExpandedRole] = useState(null);
   const [selectedRole, setSelectedRole] = useState(null)
 
+  const [isCalculatingAts, setIsCalculatingAts] = useState(false);
+  const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
+
   useEffect(() => {
     const stored = localStorage.getItem("token");
     if (!stored) {
@@ -46,7 +49,7 @@ const JobSeeker = () => {
     }
   }, [navigate]);
 
-  
+
 
   //this calls all the jobs in the database regardless of the job description, need to optimise it
   const fetchAllJobs = async () => {
@@ -239,11 +242,26 @@ const JobSeeker = () => {
       return;
     }
 
-    setLoading(true);
+    setLoading(true); // For the main "Submit Application" button
+    setAtsScore(0.0);
+    setModelJobRole("");
+    setEvaltext({});
+    setTopSuggestions([]);
+    setIsCalculatingAts(true); // Start ATS spinner
+    setIsFetchingSuggestions(false); // Ensure suggestions spinner is reset
     try {
       const textResume = await modelCallForResume();
+      if (!textResume) {
+        alert("Could not process the resume. Please try a different file or check the file content.");
+        setIsCalculatingAts(false); // Stop ATS spinner as we can't proceed
+        // setLoading(false) will be handled in the finally block
+        return; // Exit if resume text extraction failed
+      }
       const { atsScore: score, jobRole: role } = await getAtsScore(textResume);
+      setIsCalculatingAts(false);
+      setIsFetchingSuggestions(true);
       await getFeedback(textResume);
+      setIsFetchingSuggestions(false);
 
       const stored = JSON.parse(localStorage.getItem("token"));
       const token = stored.token;
@@ -273,6 +291,9 @@ const JobSeeker = () => {
         "Error uploading resume:",
         error.response?.data || error.message
       );
+      alert("An error occurred during the submission. Please check the console for details.");
+      setIsCalculatingAts(false);
+      setIsFetchingSuggestions(false);
       throw error;
     } finally {
       setLoading(false);
@@ -353,19 +374,24 @@ const JobSeeker = () => {
                 className="w-full p-3 border rounded-lg bg-gray-100 text-black focus:ring-2 focus:ring-blue-500 transition"
                 value={jobRole.role || ""}
                 onChange={(e) => {
-                  const selectedRole = e.target.value;
-                  const fullJobObj = uniqueJobs.find(
-                    (job) => job.role === selectedRole
-                  );
-                  if (fullJobObj) {
-                    console.log(fullJobObj)
-                    setJobRole(fullJobObj);
-                    handleRoleSelect(fullJobObj.role, fullJobObj.ids);
+                  const selectedRoleValue = e.target.value;
+                  if (selectedRoleValue === "") { // User selected "Show General Suggestions"
+                    setJobRole({ role: "", ids: [] });
+                    setExpandedRole(null); // Clear details shown under the dropdown
+                    setSelectedJobDetails([]);
+                    setSelectedRole(null); // Clear the role that might trigger details display
+                  } else {
+                    const fullJobObj = uniqueJobs.find(
+                      (job) => job.role === selectedRoleValue
+                    );
+                    if (fullJobObj) {
+                      setJobRole(fullJobObj); // This jobRole.role is used by getAtsScore
+                      handleRoleSelect(fullJobObj.role, fullJobObj.ids); // This fetches and displays job details under dropdown
+                    }
                   }
                 }}
-                required
               >
-                <option value="">-- Choose a Job Role --</option>
+                <option value="">-- Show General Suggestions --</option>
                 {uniqueJobs.map(({ role }) => (
                   <option key={role} value={role}>
                     {role}
@@ -439,51 +465,91 @@ const JobSeeker = () => {
         </div>
 
         {/* Right - ATS Score Section */}
+        {/* Right - ATS Score Section */}
         <div className="w-full max-w-xl bg-white shadow-md p-8 rounded-2xl border border-gray-300">
           <h2 className="text-3xl font-extrabold mb-4 text-center">Results</h2>
-          {atsScore > 0 && (
+
+          {/* Spinner for ATS Score Calculation / Top Suggestions Fetching */}
+          {isCalculatingAts && (
+            <div className="text-center py-4">
+              <p className="text-lg font-semibold text-blue-600 animate-pulse">
+                {jobRole.role ? "Calculating ATS Score..." : "Fetching Top Job Suggestions..."}
+              </p>
+            </div>
+          )}
+
+          {/* Content to display after ATS/Top Suggestions calculation is done */}
+          {!isCalculatingAts && (
             <>
-              <p className="text-xl font-medium text-green-600 text-center mb-4">
-                ATS Score: <span className="font-bold">{atsScore.toFixed(2)}%</span>
-              </p>
-              <p className="text-center text-gray-700 mb-2">
-                Best Matched Job Role:{" "}
-                <span className="font-semibold text-blue-600">{modelJobRole}</span>
-              </p>
+              {/* Case 1: A specific job role was selected by the user, AND it was matched by the model */}
+              {jobRole.role && modelJobRole && atsScore > 0 && (
+                <>
+                  <p className="text-xl font-medium text-green-600 text-center mb-2">
+                    ATS Score for <span className="font-semibold text-blue-600">{modelJobRole}</span>:
+                    <span className="font-bold ml-2">{atsScore.toFixed(2)}%</span>
+                  </p>
+                  {/* modelJobRole is already part of the message above.
+              If you need to display other details of this specific matched job, you can add them here.
+           */}
+                </>
+              )}
+
+              {/* Case 2: "Show General Suggestions" was selected (or no role), so display topSuggestions */}
+              {/* topSuggestions are populated by getAtsScore when jobRole.role === "" */}
+              {topSuggestions.length > 0 && (
+                <div className="mt-4"> {/* Provides spacing if this is the primary result shown */}
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    Top Suggested Job Roles for Your Resume:
+                  </h3>
+                  <ul className="list-disc list-inside text-gray-700 space-y-1">
+                    {topSuggestions.map((job, idx) => (
+                      <li key={idx}>
+                        {job.jobRole} - Predicted ATS Score:{" "}
+                        <span className="font-semibold text-green-600">
+                          {/* Ensure job["ATS Score"] exists and is a number before calling toFixed */}
+                          {typeof job["ATS Score"] === 'number' ? job["ATS Score"].toFixed(2) : 'N/A'}%
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Spinner for Resume Improvement Suggestions (evaltext) */}
+              {/* This spinner appears after the ATS/Top Suggestions part is done, and evaltext is being fetched */}
+              {isFetchingSuggestions && (
+                <div className="text-center py-4 mt-6"> {/* mt-6 for spacing from previous results */}
+                  <p className="text-lg font-semibold text-blue-600 animate-pulse">
+                    Fetching resume improvement suggestions...
+                  </p>
+                </div>
+              )}
+
+              {/* Resume Improvement Suggestions (evaltext) - Displayed after fetching */}
+              {!isFetchingSuggestions && evaltext && Object.keys(evaltext).length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold mb-2 text-gray-800">Resume Improvement Suggestions:</h3>
+                  <ul className="list-disc list-inside text-gray-700 space-y-2">
+                    {Object.entries(evaltext).map(([key, value], index) => (
+                      <li key={index}>
+                        <strong className="capitalize">{key.replace(/_/g, ' ')}:</strong> {value}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Placeholder: Shown if no specific results are ready to be displayed after all loading attempts */}
+              {!loading && !isCalculatingAts && !isFetchingSuggestions &&
+                !(jobRole.role && modelJobRole && atsScore > 0) && // No specific match shown
+                topSuggestions.length === 0 &&                  // No top suggestions shown
+                Object.keys(evaltext).length === 0 &&          // No evaltext shown
+                (
+                  <p className="text-center text-gray-500 mt-6">
+                    Upload your resume. Your results and suggestions will appear here.
+                  </p>
+                )}
             </>
-          )}
-
-          {/* Feedback Section */}
-          {evaltext && Object.keys(evaltext).length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-2 text-gray-800">Suggestions:</h3>
-              <ul className="list-disc list-inside text-gray-700 space-y-2">
-                {Object.entries(evaltext).map(([key, value], index) => (
-                  <li key={index}>
-                    <strong>{key}:</strong> {value}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Suggestions if job role is not selected */}
-          {topSuggestions.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                Top Suggested Job Roles:
-              </h3>
-              <ul className="list-disc list-inside text-gray-700 space-y-1">
-                {topSuggestions.map((job, idx) => (
-                  <li key={idx}>
-                    {job.jobRole} - ATS Score:{" "}
-                    <span className="font-semibold text-green-600">
-                      {job["ATS Score"].toFixed(2)}%
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
           )}
         </div>
       </div>
