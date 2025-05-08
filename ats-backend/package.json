@@ -6,8 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
-    "postinstall": "prisma generate",
+    "build": "prisma generate && nest build",
     "clear-db": "ts-node scripts/clearDatabase.ts",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
