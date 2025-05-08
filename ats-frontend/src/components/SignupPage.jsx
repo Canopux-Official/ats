@@ -88,6 +88,7 @@ const SignupPage = () => {
     setLoading(true);  
   
     try {
+      console.log("HandleSubmit working")
       localStorage.setItem('email', formData.email)
       await registerUser(); // Call register function only if validation passes
     } finally {
