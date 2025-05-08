@@ -9,7 +9,10 @@ async function bootstrap() {
     prefix: '/uploads/', // This will expose files at http://localhost:3000/uploads/filename.pdf
   });
   app.enableCors({
-    origin: 'http://localhost:5173', // Allow all origins (change this in production)
+    origin: ['http://localhost:5173',
+      'https://ats-canopuxs-projects.vercel.app/',
+        'http://localhost:3000'
+    ], // Allow all origins (change this in production)
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: 'Content-Type, Authorization',
     credentials: true, // Allow sending cookies or authentication headers
