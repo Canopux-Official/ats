@@ -22,7 +22,7 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:3000/auth/login", {
+      const response = await fetch("https://ats-backend-production-33eb.up.railway.app/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

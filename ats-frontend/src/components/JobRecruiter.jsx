@@ -68,7 +68,7 @@ const JobRecuriter = () => {
       const stored = JSON.parse(localStorage.getItem("token"));
       const token = stored?.token;
 
-      const response = await axios.get("http://localhost:3000/jobs/my-jobs", {
+      const response = await axios.get("https://ats-backend-production-33eb.up.railway.app/jobs/my-jobs", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -94,7 +94,7 @@ const JobRecuriter = () => {
       if (!token) throw new Error("No token found");
 
       setCreatedJobs(false);
-      const response = await axios.post("http://localhost:3000/jobs", formData, {
+      const response = await axios.post("https://ats-backend-production-33eb.up.railway.app/jobs", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -127,7 +127,7 @@ const JobRecuriter = () => {
       const stored = JSON.parse(localStorage.getItem("token"));
       const token = stored.token;
 
-      const response = await axios.get(`http://localhost:3000/jobs/${jobId}/resumes`, {
+      const response = await axios.get(`https://ats-backend-production-33eb.up.railway.app/jobs/${jobId}/resumes`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -154,7 +154,7 @@ const JobRecuriter = () => {
       const stored = JSON.parse(localStorage.getItem("token"));
       const token = stored?.token;
 
-      const response = await axios.get(`http://localhost:3000/resumes/${filename}`, {
+      const response = await axios.get(`https://ats-backend-production-33eb.up.railway.app/resumes/${filename}`, {
         responseType: 'blob', // So the file is handled as binary
         headers: {
           Authorization: `Bearer ${token}`,
@@ -183,7 +183,7 @@ const JobRecuriter = () => {
     const stored = JSON.parse(localStorage.getItem("token"));
     const token = stored?.token;
     try {
-      const response = await axios.delete(`http://localhost:3000/jobs/${jobId}`, {
+      const response = await axios.delete(`https://ats-backend-production-33eb.up.railway.app/jobs/${jobId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
