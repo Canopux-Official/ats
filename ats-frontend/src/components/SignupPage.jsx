@@ -34,7 +34,7 @@ const SignupPage = () => {
     console.log("working before calling api")
   
     try {
-      const response = await fetch("https://ats-backend-production-33eb.up.railway.app/auth/signup", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

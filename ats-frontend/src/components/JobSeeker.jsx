@@ -54,7 +54,7 @@ const JobSeeker = () => {
   //this calls all the jobs in the database regardless of the job description, need to optimise it
   const fetchAllJobs = async () => {
     try {
-      const response = await axios.get("https://ats-backend-production-33eb.up.railway.app/jobs");
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/jobs`);
       const jobs = response.data;
       setAllJobs(response.data);
       console.log("All jobs fetched successfully:", response.data);
@@ -92,7 +92,7 @@ const JobSeeker = () => {
         console.warn("Invalid jobIds passed to fetchJobDetailsByIds:", jobIds);
         return;
       }
-      const response = await axios.get(`https://ats-backend-production-33eb.up.railway.app/jobs/by-ids`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/jobs/by-ids`, {
         params: {
           ids: jobIds, // Axios handles array serialization: ?ids=1&ids=2
         },
@@ -273,7 +273,7 @@ const JobSeeker = () => {
         formData.append("jobRole", role); // correct key and value
 
         const response = await axios.post(
-          "https://ats-backend-production-33eb.up.railway.app/resumes/upload",
+          `${import.meta.env.VITE_API_URL}/resumes/upload`,
           formData,
           {
             headers: {
