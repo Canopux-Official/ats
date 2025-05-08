@@ -31,9 +31,10 @@ const SignupPage = () => {
     }
   
     setLoading(true);
+    console.log("working before calling api")
   
     try {
-      const response = await fetch("http://ats-backend.railway.internal/auth/signup", {
+      const response = await fetch("https://ats-backend-production-33eb.up.railway.app/auth/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -42,6 +43,7 @@ const SignupPage = () => {
       });
   
       const data = await response.json();
+      console.log("Api called", data)
   
       if (!response.ok) {
         throw new Error(data.message || "Signup failed.");
