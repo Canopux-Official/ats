@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate} from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import { Home } from "lucide-react";
 
@@ -14,14 +14,12 @@ const SignupPage = () => {
   });
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-  
     setFormData({
-      ...formData,
-      [name]: name === "role" ? (value === "job-seeker" ? "JOB_SEEKER" : "RECRUITER") : value,
-    });
+    ...formData,
+    [e.target.name]: e.target.value,
+  });
   };
-  
+
 
   // Function to send signup data to backend
   const registerUser = async () => {
@@ -29,10 +27,10 @@ const SignupPage = () => {
       alert("Please fill in all fields before proceeding.");
       return;
     }
-  
+
     setLoading(true);
     console.log("working before calling api")
-  
+
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/signup`, {
         method: "POST",
@@ -41,30 +39,30 @@ const SignupPage = () => {
         },
         body: JSON.stringify(formData),
       });
-  
+
       const data = await response.json();
       console.log("Api called", data)
-  
+
       if (!response.ok) {
         throw new Error(data.message || "Signup failed.");
       }
-  
+
       if (data.success && data.token) {
         localStorage.setItem('token', JSON.stringify(data.token)); // ✅ Store token
         localStorage.setItem('email', formData.email); // Store email in localStorage
 
         alert("Signup successful!");
-  
+
         // Reset form after successful signup
         setFormData({ email: "", password: "", role: "" });
-  
+
         navigate("/");
       } else {
         alert(data.message || "Signup failed. Please try again.");
       }
     } catch (error) {
       console.error("Error signing up:", error);
-  
+
       if (error.message === "Email is already registered") {
         alert("This email is already registered. Please log in instead.");
       } else {
@@ -72,21 +70,21 @@ const SignupPage = () => {
       }
     } finally {
       setLoading(false);
-    }
-  };
-  
-  
+    }
+  };
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent default form submission
-  
+
     if (!formData.email || !formData.password || !formData.role) {
       alert("Please fill in all fields before proceeding.");
       return;
     }
-  
-    setLoading(true);  
-  
+
+    setLoading(true);
+
     try {
       console.log("HandleSubmit working")
       localStorage.setItem('email', formData.email)
@@ -95,7 +93,7 @@ const SignupPage = () => {
       setLoading(false);
     }
   };
-  
+
 
   return (
     <>
@@ -169,10 +167,11 @@ const SignupPage = () => {
                 <option value="" disabled>
                   Select Your Role
                 </option>
-                <option value="job-seeker">Job Seeker</option>
-                <option value="job-recruiter">Job Recruiter</option>
+                <option value="JOB_SEEKER">Job Seeker</option>
+                <option value="RECRUITER">Job Recruiter</option>
               </select>
             </div>
+
 
             {/* Terms & Conditions */}
             <div className="flex items-center space-x-2">
@@ -191,11 +190,10 @@ const SignupPage = () => {
             {/* Submit Button with Hover Effect */}
             <button
               type="submit"
-              className={`w-full py-2 px-4 rounded-lg font-bold text-white transition duration-300 ${
-                loading
+              className={`w-full py-2 px-4 rounded-lg font-bold text-white transition duration-300 ${loading
                   ? "bg-indigo-400 cursor-not-allowed"
                   : "bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-purple-600 hover:to-indigo-600"
-              }`}
+                }`}
               disabled={loading}
             >
               {loading ? (
