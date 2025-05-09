@@ -11,6 +11,8 @@ async function bootstrap() {
   app.enableCors({
     origin: ['http://localhost:5173',
       'https://ats-canopuxs-projects.vercel.app/',
+      'https://ats-orpin.vercel.app',
+      'https://ats-canopuxs-projects.vercel.app/',
         'http://localhost:3000'
     ], // Allow all origins (change this in production)
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
