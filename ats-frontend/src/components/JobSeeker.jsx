@@ -177,7 +177,7 @@ const JobSeeker = () => {
           setTopSuggestions(topThree);
           setAtsScore(0.0);
           setModelJobRole("");
-          console.log("atsScore", atsScore, "JobRole", modelJobRole)
+          console.log("atsScore", atsScore, "JobRole", modelJobRole, "Resume not stored because the user has not selected any job role")
           return { atsScore: 0.0, jobRole: "" }
         } else {
           setTopSuggestions([]);
