@@ -55,9 +55,15 @@ const JobSeeker = () => {
   const fetchAllJobs = async () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/jobs`);
-      const jobs = response.data;
-      setAllJobs(response.data);
-      console.log("All jobs fetched successfully:", response.data);
+      const rawJobs = response.data;
+
+      const jobs = rawJobs.map((job) => ({
+      ...job,
+      skills: job.skills.split(',').map((skill) => skill.trim()),
+    }));
+
+      setAllJobs(jobs);
+      console.log("All jobs fetched successfully:", jobs);
 
       const roleMap = {};
       for (const job of jobs) {
