@@ -59,7 +59,7 @@ const JobSeeker = () => {
 
       const jobs = rawJobs.map((job) => ({
       ...job,
-      skills: job.skills.split(',').map((skill) => skill.trim()),
+      skills: [job.skills],
     }));
 
       setAllJobs(jobs);
