@@ -57,10 +57,17 @@ const JobSeeker = () => {
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/jobs`);
       const rawJobs = response.data;
 
-      const jobs = rawJobs.map((job) => ({
-      ...job,
-      skills: [job.skills],
-    }));
+      const jobs = rawJobs.map((job) => {
+      const normalizedSkills = job.skills
+        .split(',')
+        .map((skill) => skill.trim().toLowerCase().replace(/\./g, ''))
+        .join(', ');
+
+      return {
+        ...job,
+        skills: [normalizedSkills],
+      };
+    });
 
       setAllJobs(jobs);
       console.log("All jobs fetched successfully:", jobs);
